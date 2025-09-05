@@ -36,7 +36,7 @@ jobs:
           release_stream: 'beta'
 ```
 
-### With Auto-merge
+### With Auto-merge (Two Token Approach)
 
 ```yaml
 name: Update Dependencies with Auto-merge
@@ -60,6 +60,7 @@ jobs:
         with:
           config_file: '.github/homebridge-dependency-bot.json'
           release_stream: 'beta'
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # Separate token for PR approval
 ```
 
 ### Multiple Release Streams
@@ -101,6 +102,7 @@ jobs:
 |-------|-------------|----------|---------|
 | `config_file` | Path to the dependency bot configuration file | No | `.github/homebridge-dependency-bot.json` |
 | `release_stream` | Release stream to update (beta or alpha) | No | `beta` |
+| `GH_TOKEN` | GitHub token with PR approval permissions (see Token Handling section) | No | Uses `github.token` if not provided |
 
 ## Outputs
 
@@ -114,13 +116,49 @@ jobs:
 
 ## Token Handling
 
-**Important**: This action handles authentication automatically using GitHub's built-in `github.token`. You do **NOT** need to manually pass a `GH_TOKEN` parameter.
+This action supports two different approaches for token handling to work around GitHub's security restrictions:
 
-The action uses `github.token` for:
-- Checking out the repository with write access
-- Creating branches and commits
-- Creating pull requests
-- Approving and merging PRs (when auto-merge is enabled)
+### Single Token Approach (Basic)
+
+For basic usage without auto-merge, the action uses GitHub's built-in `github.token` automatically:
+
+```yaml
+steps:
+  - name: Update Dependencies
+    uses: NorthernMan54/Homebridge-Dependency-Bot@latest
+    with:
+      config_file: '.github/homebridge-dependency-bot.json'
+      release_stream: 'beta'
+```
+
+### Two Token Approach (Auto-merge)
+
+For auto-merge functionality, GitHub's security rules prevent a bot from creating a PR and then approving it with the same token. To work around this, use two different tokens:
+
+```yaml
+steps:
+  - name: Update Dependencies with Auto-merge
+    uses: NorthernMan54/Homebridge-Dependency-Bot@latest
+    with:
+      config_file: '.github/homebridge-dependency-bot.json'
+      release_stream: 'beta'
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+```
+
+**Token Setup:**
+- `secrets.GITHUB_TOKEN` (automatic): Used for repository operations (checkout, push, create PR)
+- `secrets.GH_TOKEN` (manual): A separate token with only PR approval permissions
+
+**How to create the approval token:**
+1. Create a Personal Access Token (classic) or Fine-grained token
+2. Grant only the minimum permissions needed: `pull_requests: write`
+3. Add it as a repository secret named `GH_TOKEN`
+
+### Token Usage Summary
+
+The action uses tokens for different operations:
+- **Repository operations** (checkout, push, create PR): Always uses `github.token`
+- **PR approval/merge** (approve, merge): Uses `GH_TOKEN` input if provided, fallback to `github.token`
 
 ### Required Permissions
 
@@ -238,9 +276,11 @@ Pull request created: #123 (https://github.com/owner/repo/pull/123)
 
 ## Security Considerations
 
-- The action automatically uses GitHub's secure `github.token` - no manual token configuration needed
-- Tokens are never exposed as workflow inputs or environment variables
-- Auto-merge functionality requires appropriate repository permissions
+- **Two-token security**: For auto-merge functionality, use separate tokens to prevent bot self-approval security issues
+- **Minimal permissions**: Grant only the minimum required permissions to each token
+- Repository operations use the standard `github.token` automatically
+- PR approval operations can use a separate `GH_TOKEN` with limited permissions
+- Tokens are handled securely and never exposed in logs or environment variables
 - Consider using branch protection rules for additional security
 
 ## Troubleshooting
@@ -253,7 +293,9 @@ Pull request created: #123 (https://github.com/owner/repo/pull/123)
 
 **Package not found**: Check that the package name is correct and the tag/pattern matches available versions
 
-**Auto-merge fails**: Ensure your repository settings allow auto-merge and the workflow token has sufficient permissions
+**Auto-merge fails**: For auto-merge functionality, ensure you're using the two-token approach with a separate `GH_TOKEN` that has PR approval permissions. GitHub prevents bots from self-approving PRs with the same token used to create them.
+
+**Token setup issues**: Create a Personal Access Token with `pull_requests: write` permission and add it as a repository secret named `GH_TOKEN`
 
 ### Debug Mode
 
