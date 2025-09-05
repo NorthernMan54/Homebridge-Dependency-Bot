@@ -218,18 +218,23 @@ runs:
         # Check if GH_TOKEN is provided and different from GITHUB_TOKEN
         if [ -z "${{ inputs.GH_TOKEN }}" ]; then
           echo "::warning::No GH_TOKEN provided. Auto-merge may fail if using default GITHUB_TOKEN."
-          echo "::warning::To fix this, provide a personal access token or GitHub App token with 'pull_requests: write' permission."
+          echo "::warning::To fix this, provide a personal access token or GitHub"
+          echo "::warning::App token with 'pull_requests: write' permission."
         fi
 
         # Attempt merge with better error handling
         if ! gh pr merge "$pr_number" --squash --delete-branch; then
           echo "::error::Failed to merge PR #$pr_number"
-          echo "::error::This usually happens when the token lacks 'pull_requests: write' permission."
+          echo "::error::This usually happens when the token lacks"
+          echo "::error::'pull_requests: write' permission."
           echo "::error::Possible solutions:"
-          echo "::error::1. Provide a GitHub token with sufficient permissions via GH_TOKEN input"
+          echo "::error::1. Provide a GitHub token with sufficient"
+          echo "::error::   permissions via GH_TOKEN input"
           echo "::error::2. Use a personal access token with 'repo' scope"
-          echo "::error::3. Use a GitHub App token with 'pull_requests: write' permission"
-          echo "::error::4. Set auto_merge: false in config to skip automatic merging"
+          echo "::error::3. Use a GitHub App token with"
+          echo "::error::   'pull_requests: write' permission"
+          echo "::error::4. Set auto_merge: false in config to skip"
+          echo "::error::   automatic merging"
           exit 1
         fi
         echo "::endgroup::"
