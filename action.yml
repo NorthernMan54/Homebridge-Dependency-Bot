@@ -1,5 +1,10 @@
+---
 name: Update Release Stream Dependencies - homebridge Dependency Bot
-description: 'Reusable bot to manage a package.json file for the latest release version. Creates a pull request and merges. Used by homebridge-apt-pkg and docker-homebridge. Note: For auto-merge functionality, ensure the workflow token has permissions to approve and merge pull requests.'
+description: 'Reusable bot to manage a package.json file for the latest
+  release version. Creates a pull request and merges. Used by
+  homebridge-apt-pkg and docker-homebridge. Note: For auto-merge
+  functionality, ensure the workflow token has permissions to approve
+  and merge pull requests.'
 
 inputs:
   config_file:
@@ -11,7 +16,8 @@ inputs:
     required: false
     default: 'beta'
   GH_TOKEN:
-    description: 'GitHub token with pull request approval permissions (separate from GITHUB_TOKEN to avoid bot self-approval restrictions)'
+    description: 'GitHub token with pull request approval permissions
+      (separate from GITHUB_TOKEN to avoid bot self-approval restrictions)'
     required: false
 
 outputs:
@@ -149,7 +155,7 @@ runs:
               else
                 changed_dirs="$changed_dirs,$dir"
               fi
-              git add package.json 
+              git add package.json
             fi
             cd - > /dev/null
           done
@@ -208,7 +214,24 @@ runs:
       run: |
         pr_number="${{ steps.create-pr.outputs.pr_number }}"
         echo "::notice::Auto-merging PR #$pr_number"
-        gh pr merge "$pr_number" --squash --delete-branch || { echo "::error::Failed to merge PR #$pr_number"; exit 1; }
+
+        # Check if GH_TOKEN is provided and different from GITHUB_TOKEN
+        if [ -z "${{ inputs.GH_TOKEN }}" ]; then
+          echo "::warning::No GH_TOKEN provided. Auto-merge may fail if using default GITHUB_TOKEN."
+          echo "::warning::To fix this, provide a personal access token or GitHub App token with 'pull_requests: write' permission."
+        fi
+
+        # Attempt merge with better error handling
+        if ! gh pr merge "$pr_number" --squash --delete-branch; then
+          echo "::error::Failed to merge PR #$pr_number"
+          echo "::error::This usually happens when the token lacks 'pull_requests: write' permission."
+          echo "::error::Possible solutions:"
+          echo "::error::1. Provide a GitHub token with sufficient permissions via GH_TOKEN input"
+          echo "::error::2. Use a personal access token with 'repo' scope"
+          echo "::error::3. Use a GitHub App token with 'pull_requests: write' permission"
+          echo "::error::4. Set auto_merge: false in config to skip automatic merging"
+          exit 1
+        fi
         echo "::endgroup::"
       env:
         GH_TOKEN: ${{ inputs.GH_TOKEN || github.token }}
