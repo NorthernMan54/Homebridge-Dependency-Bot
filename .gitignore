@@ -1,0 +1,22 @@
+# Temporary files
+/tmp/
+*.tmp
+*.log
+
+# Test artifacts
+test-scenarios/
+test-run/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node modules (if any tests create them)
+node_modules/
+package-lock.json

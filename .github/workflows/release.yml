@@ -1,0 +1,95 @@
+---
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  validate-before-release:
+    name: Validate Before Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint jq
+
+      - name: Validate YAML syntax
+        run: yamllint action.yml
+
+      - name: Check version format
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            version="${{ github.ref_name }}"
+          else
+            version="${{ inputs.version }}"
+          fi
+
+          if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must follow semantic versioning (v1.0.0)"
+            exit 1
+          fi
+
+          echo "Version format validation passed: $version"
+
+  create-release:
+    name: Create Release
+    needs: validate-before-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            version="${{ github.ref_name }}"
+          else
+            version="${{ inputs.version }}"
+          fi
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        run: |
+          version="${{ steps.version.outputs.version }}"
+
+          echo "## Homebridge Dependency Bot $version" > release-notes.md
+          echo "" >> release-notes.md
+          echo "Automated dependency updates for Homebridge projects." \
+            >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Usage" >> release-notes.md
+          echo "" >> release-notes.md
+          echo '```yaml' >> release-notes.md
+          echo "uses: NorthernMan54/Homebridge-Dependency-Bot@$version" \
+            >> release-notes.md
+          echo "with:" >> release-notes.md
+          echo "  config_file: '.github/homebridge-dependency-bot.json'" \
+            >> release-notes.md
+          echo "  release_stream: 'beta'" >> release-notes.md
+          echo '```' >> release-notes.md
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false

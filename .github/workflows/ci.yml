@@ -1,0 +1,46 @@
+---
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  lint-and-validate:
+    name: Lint and Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint jq
+
+      - name: Validate YAML syntax
+        run: |
+          echo "::group::YAML Lint Results"
+          yamllint action.yml
+          echo "::endgroup::"
+
+      - name: Validate action structure
+        run: |
+          echo "::group::Action Structure Validation"
+          yq eval -o=json action.yml > /tmp/action.json
+          jq '.' /tmp/action.json > /dev/null
+          echo "Action structure validation passed"
+          echo "::endgroup::"
+
+      - name: Check required fields
+        run: |
+          echo "::group::Required Fields Check"
+          yq eval '.inputs' action.yml | grep -q "config_file"
+          yq eval '.inputs' action.yml | grep -q "release_stream"
+          yq eval '.outputs' action.yml | grep -q "changes_detected"
+          yq eval '.outputs' action.yml | grep -q "changed_dirs"
+          echo "Required fields validation passed"
+          echo "::endgroup::"

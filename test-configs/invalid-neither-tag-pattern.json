@@ -1,0 +1,17 @@
+{
+  "git_user": {
+    "name": "Homebridge Dependency Bot",
+    "email": "actions@github.com"
+  },
+  "auto_merge": false,
+  "directories": [
+    {
+      "directory": ".",
+      "packages": [
+        {
+          "name": "homebridge"
+        }
+      ]
+    }
+  ]
+}

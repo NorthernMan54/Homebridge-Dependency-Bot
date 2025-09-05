@@ -1,5 +1,10 @@
+---
 name: Update Release Stream Dependencies - homebridge Dependency Bot
-description: 'Reusable bot to manage a package.json file for the latest release version. Creates a pull request and merges. Used by homebridge-apt-pkg and docker-homebridge. Note: For auto-merge functionality, ensure the workflow token has permissions to approve and merge pull requests.'
+description: >-
+  Reusable bot to manage a package.json file for the latest release version.
+  Creates a pull request and merges. Used by homebridge-apt-pkg and
+  docker-homebridge. Note: For auto-merge functionality, ensure the workflow
+  token has permissions to approve and merge pull requests.
 
 inputs:
   config_file:
@@ -11,7 +16,9 @@ inputs:
     required: false
     default: 'beta'
   GH_TOKEN:
-    description: 'GitHub token with pull request approval permissions (separate from GITHUB_TOKEN to avoid bot self-approval restrictions)'
+    description: >-
+      GitHub token with pull request approval permissions (separate from
+      GITHUB_TOKEN to avoid bot self-approval restrictions)
     required: false
 
 outputs:
@@ -48,29 +55,37 @@ runs:
       id: load-config
       shell: bash
       run: |
-          echo "::group::🤖 homebridge ${{ inputs.release_stream }} Dependency Bot - Update Dependencies"
+          echo "::group::🤖 homebridge ${{ inputs.release_stream }} \
+            Dependency Bot - Update Dependencies"
           config="${{ inputs.config_file }}"
           config_abs="$(pwd)/$config"
           if [ ! -f "$config_abs" ]; then
-            echo "::error::Config file not found: $config_abs. Please ensure ${{ inputs.config_file }} exists in the repository."
+            echo "::error::Config file not found: $config_abs. Please \
+              ensure ${{ inputs.config_file }} exists in the repository."
             exit 1
           fi
-          user_name=$(jq -r '.git_user.name // "Homebridge Dependency Bot"' "$config_abs")
-          user_email=$(jq -r '.git_user.email // "actions@github.com"' "$config_abs")
+          user_name=$(jq -r '.git_user.name // "Homebridge Dependency Bot"' \
+            "$config_abs")
+          user_email=$(jq -r '.git_user.email // "actions@github.com"' \
+            "$config_abs")
           auto_merge=$(jq -r '.auto_merge // false' "$config_abs")
           dirs_length=$(jq '.directories | length' "$config_abs")
           for i in $(seq 0 $(($dirs_length - 1))); do
             pkgs_length=$(jq ".directories[$i].packages | length" "$config_abs")
             for j in $(seq 0 $(($pkgs_length - 1))); do
               pkg=$(jq -r ".directories[$i].packages[$j].name" "$config_abs")
-              has_tag=$(jq -r ".directories[$i].packages[$j].tag // null" "$config_abs")
-              has_pattern=$(jq -r ".directories[$i].packages[$j].pattern // null" "$config_abs")
+              has_tag=$(jq -r ".directories[$i].packages[$j].tag // null" \
+                "$config_abs")
+              has_pattern=$(jq -r \
+                ".directories[$i].packages[$j].pattern // null" "$config_abs")
               if [ "$has_tag" != "null" ] && [ "$has_pattern" != "null" ]; then
-                echo "::error::Package $pkg in directory $i has both tag and pattern defined. Specify only one."
+                echo "::error::Package $pkg in directory $i has both tag \
+                  and pattern defined. Specify only one."
                 exit 1
               fi
               if [ "$has_tag" = "null" ] && [ "$has_pattern" = "null" ]; then
-                echo "::error::Package $pkg in directory $i has neither tag nor pattern defined. Specify one."
+                echo "::error::Package $pkg in directory $i has neither tag \
+                  nor pattern defined. Specify one."
                 exit 1
               fi
             done
@@ -86,7 +101,9 @@ runs:
       run: |
           git config user.name "${{ steps.load-config.outputs.user_name }}"
           git config user.email "${{ steps.load-config.outputs.user_email }}"
-          echo "Git identity configured: ${{ steps.load-config.outputs.user_name }} <${{ steps.load-config.outputs.user_email }}>"
+          echo "Git identity configured: \
+            ${{ steps.load-config.outputs.user_name }} \
+            <${{ steps.load-config.outputs.user_email }}>"
     - name: Process directories and packages
       id: process-dirs
       shell: bash
@@ -107,19 +124,27 @@ runs:
             for j in $(seq 0 $(($pkgs_length - 1))); do
               pkg=$(jq -r ".directories[$i].packages[$j].name" "$config")
               tag=$(jq -r ".directories[$i].packages[$j].tag // null" "$config")
-              pattern=$(jq -r ".directories[$i].packages[$j].pattern // null" "$config")
+              pattern=$(jq -r ".directories[$i].packages[$j].pattern // null" \
+                "$config")
               if [ "$tag" != "null" ]; then
                 echo "::notice::Installing $pkg@$tag in $dir"
-                npm install "$pkg@$tag" --save-exact --package-lock=false || { echo "::error::Failed to install $pkg@$tag"; exit 1; }
+                npm install "$pkg@$tag" --save-exact --package-lock=false || \
+                  { echo "::error::Failed to install $pkg@$tag"; exit 1; }
               else
                 unescaped_pattern=$(echo "$pattern" | sed 's/\\\+/\\/g')
-                latest_version=$(npm view "$pkg" versions --json | jq -r ".[] | select(test(\"$unescaped_pattern\"))" | sort -V | tail -n 1)
+                latest_version=$(npm view "$pkg" versions --json | \
+                  jq -r ".[] | select(test(\"$unescaped_pattern\"))" | \
+                  sort -V | tail -n 1)
                 if [ -z "$latest_version" ]; then
-                  echo "::error::No versions found for $pkg matching pattern $unescaped_pattern"
+                  echo "::error::No versions found for $pkg matching \
+                    pattern $unescaped_pattern"
                   exit 1
                 fi
                 echo "::notice::Installing $pkg@$latest_version in $dir"
-                npm install "$pkg@$latest_version" --save-exact --package-lock=false || { echo "::error::Failed to install $pkg@$latest_version"; exit 1; }
+                npm install "$pkg@$latest_version" --save-exact \
+                  --package-lock=false || \
+                  { echo "::error::Failed to install $pkg@$latest_version"; \
+                    exit 1; }
               fi
             done
             cd - > /dev/null
@@ -149,7 +174,7 @@ runs:
               else
                 changed_dirs="$changed_dirs,$dir"
               fi
-              git add package.json 
+              git add package.json
             fi
             cd - > /dev/null
           done
@@ -175,7 +200,8 @@ runs:
           echo "branch_name=$branch" >> $GITHUB_OUTPUT
       env:
         GITHUB_TOKEN: ${{ github.token }}
-    - name: Create pull request from ${{ steps.create-branch.outputs.branch_name }}
+    - name: Create pull request from \
+        ${{ steps.create-branch.outputs.branch_name }}
       id: create-pr
       if: steps.check-changes.outputs.changes_detected == 'true'
       shell: bash
@@ -183,32 +209,43 @@ runs:
           branch="${{ steps.create-branch.outputs.branch_name }}"
           changed_dirs="${{ steps.check-changes.outputs.changed_dirs }}"
           release_stream="${{ inputs.release_stream }}"
-          release_stream_upper=$(echo "$release_stream" | tr '[:lower:]' '[:upper:]')
-          pr_url=$(gh pr create --title "$release_stream_upper: Update $release_stream dependencies in $changed_dirs" --body "Automated dependency update" --label "$release_stream")
+          release_stream_upper=$(echo "$release_stream" | tr '[:lower:]' \
+            '[:upper:]')
+          pr_url=$(gh pr create --title \
+            "$release_stream_upper: Update $release_stream dependencies in \
+            $changed_dirs" --body "Automated dependency update" \
+            --label "$release_stream")
           pr_number="${pr_url##*/}"
           echo "::notice::Pull request created: #$pr_number ($pr_url)"
           echo "PR created: $pr_url"
           echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
       env:
         GITHUB_TOKEN: ${{ github.token }}
-    - name: Approve pull request - ${{ steps.create-pr.outputs.pr_number }}
+    - name: Approve pull request - \
+        ${{ steps.create-pr.outputs.pr_number }}
       id: approve-pr
-      if: steps.check-changes.outputs.changes_detected == 'true' && steps.load-config.outputs.auto_merge == 'true'
+      if: >-
+        steps.check-changes.outputs.changes_detected == 'true' &&
+        steps.load-config.outputs.auto_merge == 'true'
       shell: bash
       run: |
         pr_number="${{ steps.create-pr.outputs.pr_number }}"
         echo "::notice::Approving PR #$pr_number"
-        gh pr review "$pr_number" --approve || { echo "::error::Failed to approve PR #$pr_number"; exit 1; }
+        gh pr review "$pr_number" --approve || \
+          { echo "::error::Failed to approve PR #$pr_number"; exit 1; }
       env:
         GH_TOKEN: ${{ inputs.GH_TOKEN || github.token }}
     - name: Auto-merge PR - ${{ steps.create-pr.outputs.pr_number }}
       id: auto-merge
-      if: steps.check-changes.outputs.changes_detected == 'true' && steps.load-config.outputs.auto_merge == 'true'
+      if: >-
+        steps.check-changes.outputs.changes_detected == 'true' &&
+        steps.load-config.outputs.auto_merge == 'true'
       shell: bash
       run: |
         pr_number="${{ steps.create-pr.outputs.pr_number }}"
         echo "::notice::Auto-merging PR #$pr_number"
-        gh pr merge "$pr_number" --squash --delete-branch || { echo "::error::Failed to merge PR #$pr_number"; exit 1; }
+        gh pr merge "$pr_number" --squash --delete-branch || \
+          { echo "::error::Failed to merge PR #$pr_number"; exit 1; }
         echo "::endgroup::"
       env:
         GH_TOKEN: ${{ inputs.GH_TOKEN || github.token }}

@@ -1,0 +1,56 @@
+---
+name: Test Action
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  test-configurations:
+    name: Test Configuration Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run configuration tests
+        run: |
+          chmod +x test-configs/validate-configs.sh
+          ./test-configs/validate-configs.sh
+
+  test-action-basic:
+    name: Test Action Basic Functionality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+
+      - name: Create test scenario
+        run: |
+          mkdir -p test-run
+          cp test-configs/valid-tag-config.json \
+            test-run/.github-homebridge-dependency-bot.json
+          echo '{"name": "test", "version": "1.0.0", "dependencies": {}}' \
+            > test-run/package.json
+
+      - name: Test action with valid config
+        id: test-action
+        continue-on-error: true
+        uses: ./
+        with:
+          config_file: test-run/.github-homebridge-dependency-bot.json
+
+      - name: Verify action outputs
+        run: |
+          echo "Action completed with status: ${{ steps.test-action.outcome }}"
+          echo "Changes detected: \
+            ${{ steps.test-action.outputs.changes_detected }}"
+          echo "Auto merge: ${{ steps.test-action.outputs.auto_merge }}"
