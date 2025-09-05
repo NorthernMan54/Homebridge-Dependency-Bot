@@ -154,6 +154,8 @@ steps:
 2. Grant only the minimum permissions needed: `pull_requests: write`
 3. Add it as a repository secret named `GH_TOKEN`
 
+**⚠️ Security Note:** Always pass `GH_TOKEN` as a secret (`${{ secrets.GH_TOKEN }}`) in your workflow. Never expose token values directly in your workflow files.
+
 ### Token Usage Summary
 
 The action uses tokens for different operations:
