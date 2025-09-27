@@ -2,7 +2,7 @@
 name: Update Release Stream Dependencies - homebridge Dependency Bot
 description: 'Reusable bot to manage a package.json file for the latest
   release version. Creates a pull request and merges. Used by
-  homebridge-apt-pkg and docker-homebridge. Note: For auto-merge
+  homebridge-apt-pkg, homebridge-vm-image and docker-homebridge. Note: For auto-merge
   functionality, ensure the workflow token has permissions to approve
   and merge pull requests.'
 
@@ -87,7 +87,7 @@ runs:
           echo "user_email=$user_email" >> $GITHUB_OUTPUT
           echo "auto_merge=$auto_merge" >> $GITHUB_OUTPUT
           echo "dirs_length=$dirs_length" >> $GITHUB_OUTPUT
-          
+
     - name: Configure Git identity - ${{ steps.load-config.outputs.user_name }}
       shell: bash
       run: |
