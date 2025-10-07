@@ -197,14 +197,25 @@ runs:
           release_stream_upper=$(echo "$release_stream" | tr '[:lower:]' '[:upper:]')
 
           # Build PR body with details of changes
-          pr_body="Automated dependency update for $release_stream.\n\n"
-          pr_body+="**Changed directories:**\n"
+          pr_body="Automated dependency update for $release_stream.
+
+          **Changed directories:**"
           IFS=',' read -ra DIRS <<< "$changed_dirs"
           for dir in "${DIRS[@]}"; do
-            pr_body+="\n- \`$dir/package.json\` changes:\n"
-            pr_body+="\n\`\`\`diff\n"
-            git --no-pager diff origin/main...$branch -- "$dir/package.json" || git --no-pager diff HEAD~1 -- "$dir/package.json"
-            pr_body+="\n\`\`\`\n"
+            pr_body+="
+
+          \`$dir/package.json\` changes:
+
+          \`\`\`diff"
+            # Only include changed lines (lines starting with + or - but not the diff header)
+            diff_output=$(git --no-pager diff origin/latest...$branch -- "$dir/package.json" | grep -E '^\+|^-' | grep -vE '^(\+\+\+|---)')
+            # Fallback to previous commit if needed
+            if [ -z "$diff_output" ]; then
+              diff_output=$(git --no-pager diff HEAD~1 -- "$dir/package.json" | grep -E '^\+|^-' | grep -vE '^(\+\+\+|---)')
+            fi
+            pr_body+="
+          $diff_output
+          \`\`\`"
           done
 
           pr_url=$(gh pr create --title "$release_stream_upper: Update $release_stream dependencies in $changed_dirs" --body "$pr_body" --label "$release_stream")
