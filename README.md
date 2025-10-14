@@ -4,12 +4,16 @@ A GitHub composite action that automatically manages package.json dependencies f
 
 ## Features
 
-- 🔄 Automatic dependency updates for beta/alpha release streams
+- 🔄 Automatic dependency updates for stable/beta/alpha release streams
 - 🔧 Configurable package targeting with tags or version patterns
 - 📝 Automatic pull request creation with detailed commit messages
 - 🤖 Optional auto-merge functionality with PR approval
 - 📁 Multi-directory support for monorepo structures
 - 🔒 Secure token handling using GitHub's built-in authentication
+- Leveraged by:
+  * homebridge/homebridge-apt-pkg
+  * homebridge/docker-image
+  * homebridge/homebridge-vm-image
 
 ## Usage
 
@@ -30,7 +34,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Update Beta Dependencies
-        uses: NorthernMan54/Homebridge-Dependency-Bot@latest
+        uses: homebridge/dependency-bot@latest
         with:
           config_file: '.github/homebridge-dependency-bot.json'
           release_stream: 'beta'
@@ -56,7 +60,7 @@ jobs:
       checks: read
     steps:
       - name: Update Beta Dependencies
-        uses: NorthernMan54/Homebridge-Dependency-Bot@latest
+        uses: homebridge/dependency-bot@latest
         with:
           config_file: '.github/homebridge-dependency-bot.json'
           release_stream: 'beta'
@@ -80,7 +84,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Update Beta Dependencies
-        uses: NorthernMan54/Homebridge-Dependency-Bot@latest
+        uses: homebridge/dependency-bot@latest
         with:
           release_stream: 'beta'
 
@@ -91,7 +95,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Update Alpha Dependencies
-        uses: NorthernMan54/Homebridge-Dependency-Bot@latest
+        uses: homebridge/dependency-bot@latest
         with:
           release_stream: 'alpha'
 ```
@@ -125,7 +129,7 @@ For basic usage without auto-merge, the action uses GitHub's built-in `github.to
 ```yaml
 steps:
   - name: Update Dependencies
-    uses: NorthernMan54/Homebridge-Dependency-Bot@latest
+    uses: homebridge/dependency-bot@latest
     with:
       config_file: '.github/homebridge-dependency-bot.json'
       release_stream: 'beta'
@@ -138,7 +142,7 @@ For auto-merge functionality, GitHub's security rules prevent a bot from creatin
 ```yaml
 steps:
   - name: Update Dependencies with Auto-merge
-    uses: NorthernMan54/Homebridge-Dependency-Bot@latest
+    uses: homebridge/dependency-bot@latest
     with:
       config_file: '.github/homebridge-dependency-bot.json'
       release_stream: 'beta'
@@ -171,7 +175,7 @@ permissions:
   contents: write        # Required for creating branches and commits
   pull-requests: write   # Required for creating and managing PRs
   metadata: read         # Required for auto-merge functionality
-  checks: read          # Required for auto-merge functionality
+  checks: read           # Required for auto-merge functionality
 ```
 
 ## Configuration File

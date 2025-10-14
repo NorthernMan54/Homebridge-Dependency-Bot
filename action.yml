@@ -12,7 +12,7 @@ inputs:
     required: false
     default: '.github/homebridge-dependency-bot.json'
   release_stream:
-    description: 'Release stream to update (beta or alpha)'
+    description: 'Release stream descriptor (e.g., stable, beta, alpha), used for labels and branch names'
     required: false
     default: 'beta'
   GH_TOKEN:
